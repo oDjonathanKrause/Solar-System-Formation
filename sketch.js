@@ -115,7 +115,9 @@ function mousePressed()
 function mouseReleased()
 {
 	spaceDust.push(new SpaceDust(
-		spawnPos,
+		createVector(
+			spawnPos.x - camPos.x,
+			spawnPos.y - camPos.y),
 		createVector(
 			(spawnPos.x - mouseX) * SPAWN_VELOCITY,
 			(spawnPos.y - mouseY) * SPAWN_VELOCITY)
