@@ -1,22 +1,16 @@
 const SEED = 0;
-const DUST_SIZE = 1;
-const START_VELOCITY = 2.5;
 const SPAWN_VELOCITY = 0.015;
-const GRAVITY = 0.01;
 const CAM_SPEED = 10;
+const DUST_VELOCITY = 2.5;
 
-var spaceDust = [];
-var keysDown = [1000];
-var camPos;
-var starPos;
-var numNewDusts;
-var spawnPos;
-var mouseDown;
+let dusts = [];
+let keysDown = [1000];
+let camPos, starPos, numNewDusts, spawnPos, mouseDown, starSize, dustSize, gravity;
+let dustSizeS, starSizeS, dustSizeP, starSizeP;
 
 
-function setup()
-{
-	createCanvas(600,600);
+function setup() {
+	createCanvas(600, 600);
 	rectMode(CENTER);
 	ellipseMode(CENTER);
 	noStroke();
@@ -25,21 +19,46 @@ function setup()
 	SEED == 0 ? randomSeed(random(9999)) : randomSeed(SEED);
 	camPos = createVector(0, 0);
 	starPos = createVector(width/2, height/2);
+
+	// DOM elements
+	dustSizeS = createSlider(3, 30, 1, 1);
+	starSizeS = createSlider(5, 50, 3, 1);
+	dustSizeP = createP();
+	starSizeP = createP();
+
+	dustSizeS.position(width, 40);
+	dustSizeP.position(width+10, 0);
+	starSizeS.position(width, 100);
+	starSizeP.position(width+10, 60);
+
+	// Initial values
+	starSize = starSizeS.value();
+	dustSize = dustSizeS.value();
+	gravity = starSize * 0.01;
 }
 
-function draw()
-{
+function draw() {
 	background(0);
-	ellipse(starPos.x + camPos.x, starPos.y + camPos.y, 5);
+	ellipse(starPos.x + camPos.x, starPos.y + camPos.y, starSize, starSize);
 
-	// Add dusts
-	for (var i = 0; i < numNewDusts; i++)
-		spaceDust.push(new SpaceDust(0, 0));
+	// Slider control
+	starSizeP.html("Star size: " + starSizeS.value());
+	dustSizeP.html("Dust size: " + dustSizeS.value());
+	starSize = starSizeS.value();
+	dustSize = dustSizeS.value();
+	
+	// A big star has a stronger gravity
+	gravity = starSize * 0.01;
+
+	// Add dusts when keydown
+	for (let i = 0; i < numNewDusts; i++)
+		dusts.push(new SpaceDust(0, 0));
 	numNewDusts = 0;
 
 	// Update dusts
-	for (var i = 0; i < spaceDust.length; i++)
-		spaceDust[i].update();
+	for (dust of dusts) {
+		dust.update();
+	}
 
 	// Keyboard control
 	if (keysDown[87]) camPos.y += CAM_SPEED;
@@ -48,89 +67,33 @@ function draw()
 	if (keysDown[68]) camPos.x -= CAM_SPEED;
 	if (keysDown[78]) numNewDusts += 1;
 
-	if (mouseDown)
-	{
+	// Draw mouse line
+	if (mouseDown) {
 		stroke(255);
 		line(spawnPos.x, spawnPos.y, mouseX, mouseY);
 		noStroke();
 	}
 }
 
-function SpaceDust(spawnPos, spawnVel)
-{
-	if (spawnPos != 0)
-		this.pos = spawnPos;
-	else
-		this.pos = createVector(
-			random(width),
-			random(height));
 
-	if (spawnVel != 0)
-		this.velocity = spawnVel;
-	else
-		this.velocity = createVector(
-			random(-START_VELOCITY, START_VELOCITY),
-			random(-START_VELOCITY, START_VELOCITY));
-
-	this.update = function ()
-	{
-		// Collision
-		for (var i = 0; i < spaceDust.length; i++) {
-			var xDist = Math.abs(this.pos.x - spaceDust[i].pos.x);
-			var yDist = Math.abs(this.pos.y - spaceDust[i].pos.y);
-			if (xDist + yDist < DUST_SIZE)
-			{
-				this.velocity.x = (this.velocity.x + spaceDust[i].velocity.x) / 2;
-				this.velocity.y = (this.velocity.y + spaceDust[i].velocity.y) / 2;
-			}
-		}
-
-		// Gravity
-		var dist = Math.sqrt(this.pos.x * this.pos.x + this.pos.y * this.pos.y);
-		var force = GRAVITY / dist * dist;
-		var dir = 2 * Math.PI - Math.atan((this.pos.y - starPos.y) / (this.pos.x - starPos.x));
-
-		if (this.pos.x >= starPos.x)
-		{
-			this.velocity.x -= Math.cos(dir) * force;
-			this.velocity.y += Math.sin(dir) * force;
-		} else {
-			this.velocity.x += Math.cos(dir) * force;
-			this.velocity.y -= Math.sin(dir) * force;
-		}
-
-		// Move and draw
-		this.pos.x += this.velocity.x;
-		this.pos.y += this.velocity.y;
-		rect(this.pos.x + camPos.x, this.pos.y + camPos.y, DUST_SIZE, DUST_SIZE);
-	}
-}
-
-function mousePressed()
-{
+function mousePressed() {
 	mouseDown = true;
 	spawnPos = createVector(mouseX, mouseY);
 }
 
-function mouseReleased()
-{
-	spaceDust.push(new SpaceDust(
-		createVector(
-			spawnPos.x - camPos.x,
-			spawnPos.y - camPos.y),
-		createVector(
-			(spawnPos.x - mouseX) * SPAWN_VELOCITY,
-			(spawnPos.y - mouseY) * SPAWN_VELOCITY)
+function mouseReleased() {
+	dusts.push(new SpaceDust(
+		createVector(spawnPos.x - camPos.x, spawnPos.y - camPos.y),
+		createVector((spawnPos.x - mouseX) * SPAWN_VELOCITY, (spawnPos.y - mouseY) * SPAWN_VELOCITY)
 	));
+
 	mouseDown = false;
 }
 
-function keyPressed()
-{
+function keyPressed() {
 	keysDown[keyCode] = true;
 }
 
-function keyReleased()
-{
+function keyReleased() {
 	keysDown[keyCode] = false;
 }
